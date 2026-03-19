@@ -1,0 +1,93 @@
+[
+  {
+    "index": "acolyte",
+    "name": "Acolyte",
+    "skills": ["skill-insight", "skill-religion"],
+    "feature": "Shelter of the Faithful",
+    "equipment": ["Holy Symbol", "Prayer Book", "5 sticks of incense", "Common Clothes", "15 gp"]
+  },
+  {
+    "index": "charlatan",
+    "name": "Charlatan",
+    "skills": ["skill-deception", "skill-sleight-of-hand"],
+    "feature": "False Identity",
+    "equipment": ["Fine Clothes", "Disguise Kit", "Forgery Kit", "15 gp"]
+  },
+  {
+    "index": "criminal",
+    "name": "Criminal",
+    "skills": ["skill-deception", "skill-stealth"],
+    "feature": "Criminal Contact",
+    "equipment": ["Crowbar", "Dark Clothes", "Belt Pouch with 15 gp"]
+  },
+  {
+    "index": "entertainer",
+    "name": "Entertainer",
+    "skills": ["skill-acrobatics", "skill-performance"],
+    "feature": "By Popular Demand",
+    "equipment": ["Musical Instrument", "5 gp", "Costume", "Belt Pouch"]
+  },
+  {
+    "index": "folk_hero",
+    "name": "Folk Hero",
+    "skills": ["skill-animal-handling", "skill-survival"],
+    "feature": "Rustic Hospitality",
+    "equipment": ["Shovel", "Iron Rations", "Common Clothes", "10 gp"]
+  },
+  {
+    "index": "guild_artisan",
+    "name": "Guild Artisan",
+    "skills": ["skill-insight", "skill-persuasion"],
+    "feature": "Guild Membership",
+    "equipment": ["Artisan's Tools", "Letter of Introduction", "Common Clothes", "15 gp"]
+  },
+  {
+    "index": "hermit",
+    "name": "Hermit",
+    "skills": ["skill-medicine", "skill-religion"],
+    "feature": "Discovery",
+    "equipment": ["Herbalism Kit", "Scroll Case", "Winter Blanket", "Common Clothes", "5 gp"]
+  },
+  {
+    "index": "noble",
+    "name": "Noble",
+    "skills": ["skill-history", "skill-persuasion"],
+    "feature": "Position of Privilege",
+    "equipment": ["Fine Clothes", "Signet Ring", "Scroll of Pedigree", "25 gp"]
+  },
+  {
+    "index": "outlander",
+    "name": "Outlander",
+    "skills": ["skill-athletics", "skill-survival"],
+    "feature": "Wanderer",
+    "equipment": ["Staff", "Hunting Trap", "Trophy from an Animal", "Traveler's Clothes", "10 gp"]
+  },
+  {
+    "index": "sage",
+    "name": "Sage",
+    "skills": ["skill-arcana", "skill-history"],
+    "feature": "Researcher",
+    "equipment": ["Bottle of Ink", "Quill", "Small Knife", "Letter from a Mentor", "10 gp"]
+  },
+  {
+    "index": "sailor",
+    "name": "Sailor",
+    "skills": ["skill-athletics", "skill-perception"],
+    "feature": "Ship's Passage",
+    "equipment": ["Belaying Pin", "50 ft Rope", "Lucky Charm", "Common Clothes", "10 gp"]
+  },
+  {
+    "index": "soldier",
+    "name": "Soldier",
+    "skills": ["skill-athletics", "skill-intimidation"],
+    "feature": "Military Rank",
+    "equipment": ["Insignia of Rank", "Trophy from a Fallen Enemy", "Set of Bone Dice", "Common Clothes", "10 gp"]
+  },
+  {
+    "index": "urchin",
+    "name": "Urchin",
+    "skills": ["skill-sleight-of-hand", "skill-stealth"],
+    "feature": "City Secrets",
+    "equipment": ["Small Knife", "Map of Neighborhood", "Pet Mouse", "Common Clothes", "10 gp"]
+  }
+]
