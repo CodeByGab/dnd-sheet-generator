@@ -1,3 +1,4 @@
+import os
 import requests
 import random
 import json
@@ -10,15 +11,97 @@ parser.add_argument("--race", type=str, help="Character Race")
 parser.add_argument("--name", type=str, help="Character Name")
 args = parser.parse_args()
 
+BASE_URL = "https://www.dnd5eapi.co/api"
+
+def cached_request(url, cache_file):
+    if os.path.exists(cache_file):
+        with open(cache_file, "r") as f:
+            return json.load(f)
+
+    try:
+        data = requests.get(url, timeout=3).json()
+
+        os.makedirs(os.path.dirname(cache_file), exist_ok=True)
+        with open(cache_file, "w") as f:
+            json.dump(data, f, indent=2)
+
+        return data
+
+    except:
+        print(f"[ERRO] Sem internet e sem cache: {url}")
+        return None
+
+def local_request(path):
+    try:
+        with open(path, "r") as f:
+            return json.load(f)
+    except:
+        print(f"[ERRO] Não foi possível carregar {path}")
+        return None
+
+def get_class():
+    data = cached_request(
+        f"{BASE_URL}/classes",
+        "cache/classes/index.json"
+    )
+    return data["results"] if data else [{"index": "fighter"}]
+
+def get_class_data(class_index):
+    data = cached_request(
+        f"{BASE_URL}/2014/classes/{class_index}",
+        f"cache/classes/{class_index}.json"
+    )
+    return data or {
+        "hit_die": 8,
+        "saving_throws": [],
+        "proficiency_choices": []
+    }
+
+def get_races():
+    data = cached_request(
+        f"{BASE_URL}/2014/races",
+        "cache/races/index.json"
+    )
+    return data["results"] if data else [{"index": "human"}]
+
+
+def get_race_data(race_index):
+    data = cached_request(
+        f"{BASE_URL}/2014/races/{race_index}",
+        f"cache/races/{race_index}.json"
+    )
+    return data or {"ability_bonuses": []}
+
+def get_name(race):
+    if args.name:
+        return args.name
+    
+    name_type = random.choice([
+        "male", "female", "family", "given",
+        "town", "region"
+    ])
+
+    data = cached_request(
+        f"https://names.ironarachne.com/race/{race}/{name_type}/1",
+        f"cache/names/{race}_{name_type}.json"
+    )
+
+    if not data:
+        return random.choice(["Arin", "Luna", "Doran"])
+
+    return data["names"][0]
+
+def get_backgrounds():
+    data = local_request("cache/backgrounds/index.json")
+    return data if data else [{"index": "acolyte", "skills": []}]
+
 def get_level():
     if args.level and 1 <= args.level <= 20:
         return args.level
     else:
-        return random.choice(range(1, 20))
+        return random.choice(range(1, 21))
 
-level = get_level()
-
-def get_prof():
+def get_prof(level):
     if 1 <= level <= 4:
         return 2
     if 5 <= level <= 8:
@@ -29,62 +112,41 @@ def get_prof():
         return 5
     if 17 <= level <= 20:
         return 6
-    
-proficiency_bonus = get_prof()
 
-def fetch_classes():
-    return requests.get("https://www.dnd5eapi.co/api/classes").json()["results"]
+def calc_stt(stat):
+    return int((stat - 10 ) / 2)
 
-def get_class(classes_data):
-    if args.char_class:
-        return args.char_class.lower()
-    else:
-        return random.choice(classes_data)["index"]
+def add_plus(stat):
+    if(stat > 0):
+        return str(f"+{stat}")
+    return str(stat)
 
-classes_data = fetch_classes()
-random_class = get_class(classes_data)
+def get_hp(hit_die, con, lvl):
+    hp = hit_die + calc_stt(con)
+    for _ in range(lvl - 1):
+        hp += random.randint(1, hit_die) + calc_stt(con)
+    return hp
 
-def fetch_race():
-    return requests.get("https://www.dnd5eapi.co/api/2014/races").json()["results"]
-
-def get_race(races_data):
-    if args.race:
-        return args.race.lower()
-    else:
-        return random.choice(races_data)["index"]
-
-races_data = fetch_race()
-random_race = get_race(races_data)
-
-with open("backgrounds.json", "r") as f:
-    backgrounds = json.load(f)
-
+# Backgrounds
+backgrounds = get_backgrounds()
 random_bg = random.choice(backgrounds)
-inventory = random_bg["equipment"]
-random_bg_index = random_bg["index"]
 bg_skills = random_bg["skills"]
+level = get_level()
+proficiency_bonus = get_prof(level)
 
-def get_name():
-    name_type = [
-            "male",
-            "female",
-            "family",
-            "given",
-            "town",
-            "region"
-            ]
-    random_nt = random.choice(name_type)
-    name_data = requests.get(f"https://names.ironarachne.com/race/{random_race}/{random_nt}/1").json()
-    if args.name:
-        return args.name
-    else:
-        return name_data["names"][0]
-random_name = get_name()
+classes_data = get_class()
+random_class = args.char_class.lower() if args.char_class else random.choice(classes_data)["index"]
 
-st_data = requests.get(f"https://www.dnd5eapi.co/api/2014/classes/{random_class}").json()["saving_throws"]
-st1 = st_data[0]["index"]
-st2 = st_data[1]["index"]
+class_data = get_class_data(random_class)
 
+races_data = get_races()
+random_race = args.race.lower() if args.race else random.choice(races_data)["index"]
+
+race_data = get_race_data(random_race)
+
+random_name = get_name(random_race)
+
+# Ability scores
 base_stats = [15, 14, 13, 12, 10, 8]
 abilities = ["str", "dex", "con", "int", "wis", "cha"]
 
@@ -102,8 +164,10 @@ class_priority = {
     "monk": ["dex", "wis", "con"],
     "druid": ["wis", "con", "dex"]
 }
+
 priority = class_priority[random_class]
 ability_scores = {}
+
 for stat in priority:
     ability_scores[stat] = base_stats.pop(0)
 
@@ -113,48 +177,33 @@ for stat in abilities:
     if stat not in ability_scores:
         ability_scores[stat] = base_stats.pop(0)
 
-def calc_stt(stat):
-    return int((stat - 10 ) / 2)
+# Race Bonuses
+for bonus in race_data["ability_bonuses"]:
+    ability_scores[bonus["ability_score"]["index"]] += bonus["bonus"]
 
-def add_plus(stat):
-    if(stat > 0):
-        return str(f"+{stat}")
-    return str(stat)
+# HP
+max_hp = get_hp(class_data["hit_die"], ability_scores["con"], level)
 
-def get_hp(hit_die, con, lvl):
+# Saving Throws
+st_data = class_data["saving_throws"]
+if len(st_data) >= 2:
+    st1 = st_data[0]["index"]
+    st2 = st_data[1]["index"]
+else:
+    st1 = st2 = "str"
 
-    con_mod = calc_stt(con)
-    hp = hit_die + con_mod
-    for _ in range(lvl - 1):
-        hp += random.randint(1, hit_die) + con_mod
+save1 = calc_stt(ability_scores[st1]) + proficiency_bonus
+save2 = calc_stt(ability_scores[st2]) + proficiency_bonus
 
-    return hp
-
-hit_die_data = requests.get(
-        f"https://www.dnd5eapi.co/api/2014/classes/{random_class}").json()["hit_die"]
-max_hp = get_hp(hit_die_data, ability_scores["con"], level)
-
-def calculate_bonus_races(race_bonus):
-   for bonus in race_bonus:
-        stt = bonus["ability_score"]["index"]
-        value = bonus["bonus"]
-        ability_scores[stt] += value
-
-race_ability_bonuses = requests.get(
-        f"https://www.dnd5eapi.co/api/2014/races/{random_race}"
-        ).json()["ability_bonuses"]
-calculate_bonus_races(race_ability_bonuses)
-
-proficiency_choices = requests.get(
-        f"https://www.dnd5eapi.co/api/2014/classes/{random_class}"
-        ).json()["proficiency_choices"][0]
+# Skills
+proficiency_choices = class_data["proficiency_choices"][0]
 
 prof_skills = bg_skills.copy()
 
 available_class_skills = [
-    option["item"]["index"] 
-    for option in proficiency_choices["from"]["options"]
-    if option["item"]["index"] not in bg_skills
+    opt["item"]["index"]
+    for opt in proficiency_choices["from"]["options"]
+    if opt["item"]["index"] not in bg_skills
 ]
 
 for _ in range(proficiency_choices["choose"]):
@@ -164,25 +213,16 @@ for _ in range(proficiency_choices["choose"]):
     prof_skills.append(skill)
     available_class_skills.remove(skill)
 
-#####################################################################################
-
-strText = f"STR:{ability_scores['str']} {add_plus(calc_stt(ability_scores["str"]))}"
-dexText = f"DEX:{ability_scores['dex']} {add_plus(calc_stt(ability_scores["dex"]))}"
-conText = f"CON:{ability_scores['con']} {add_plus(calc_stt(ability_scores["con"]))}"
-intText = f"INT:{ability_scores['int']} {add_plus(calc_stt(ability_scores["int"]))}"
-wisText = f"WIS:{ability_scores['wis']} {add_plus(calc_stt(ability_scores["wis"]))}"
-chaText = f"CHA:{ability_scores['cha']} {add_plus(calc_stt(ability_scores["cha"]))}"
-
-save1 = int(calc_stt(ability_scores[st1]) + proficiency_bonus)
-save2 = int(calc_stt(ability_scores[st2]) + proficiency_bonus)
-
 print("Name:", random_name)
 print("Class:", random_class)
 print("Race:", random_race)
-print("Background:", random_bg_index)
+print("Background:", random_bg["index"])
 print("Level:", level)
 print("Prof Bonus: +", proficiency_bonus)
-print(f"Hp: {max_hp}")
+print("HP:", max_hp)
 print(f"Saves: {st1}:{save1} {st2}:{save2}")
-print(strText, dexText, conText, intText, wisText, chaText)
-print(prof_skills)
+
+for stat in abilities:
+    print(f"{stat.upper()}:{ability_scores[stat]} {add_plus(calc_stt(ability_scores[stat]))}")
+
+print("Skills:", prof_skills)
