@@ -82,7 +82,7 @@ def local_request(path):
         print(f"[ERRO] Não foi possível carregar {path}")
         return None
 
-
 def get_backgrounds():
     data = local_request("cache/backgrounds/index.json")
     return data if data else [{"index": "acolyte", "skills": []}]
+

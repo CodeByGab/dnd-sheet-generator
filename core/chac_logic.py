@@ -4,7 +4,9 @@ from api import client
 from core import math
 
 def generate_character(args):
+    
     base_stats = BASE_STATS.copy()
+
     # Backgrounds
     backgrounds = client.get_backgrounds()
     random_bg = random.choice(backgrounds)
@@ -13,17 +15,19 @@ def generate_character(args):
     level = math.get_level(args.level)
     proficiency_bonus = math.get_prof(level)
 
+    # Classes
     classes_data = client.get_class()
     random_class = args.char_class.lower() if args.char_class else random.choice(classes_data)["index"]
     class_data = client.get_class_data(random_class)
 
+    # Races
     races_data = client.get_races()
     random_race = args.race.lower() if args.race else random.choice(races_data)["index"]
     race_data = client.get_race_data(random_race)
 
     random_name = client.get_name(random_race, args.name)
 
-
+    # Stats
     priority = CLASS_PRIORITY[random_class]
     ability_scores = {}
 
@@ -43,7 +47,9 @@ def generate_character(args):
     ability_scores = math.up_asi(ability_scores, priority, level)
 
     # HP
-    max_hp = math.get_hp(class_data["hit_die"], ability_scores["con"], level)
+    hit_die = class_data["hit_die"]
+    max_hp = math.get_hp(hit_die, ability_scores["con"], level)
+
 
     # Saving Throws
     st_data = class_data["saving_throws"]
@@ -56,7 +62,7 @@ def generate_character(args):
     save1 = math.calc_stt(ability_scores[st1]) + proficiency_bonus
     save2 = math.calc_stt(ability_scores[st2]) + proficiency_bonus
 
-    # Skills
+    # Prof Skills
     proficiency_choices = class_data["proficiency_choices"][0]
 
     prof_skills = bg_skills.copy()
@@ -65,7 +71,7 @@ def generate_character(args):
         opt["item"]["index"]
         for opt in proficiency_choices["from"]["options"]
         if opt["item"]["index"] not in bg_skills
-        ]
+    ]
 
     for _ in range(proficiency_choices["choose"]):
         if not available_class_skills:
@@ -74,6 +80,21 @@ def generate_character(args):
         prof_skills.append(skill)
         available_class_skills.remove(skill)
 
+    # Minus Status
+    # Speed
+    race_speed = race_data["speed"]
+    # Initiative
+    initiative = math.calc_stt(ability_scores["dex"])
+    # AC
+    ac = 10 + initiative
+    # Geral Prof
+
+    proficiencies = [
+        prof["name"]
+        for prof in class_data["proficiencies"]
+        if not prof["index"].startswith("saving-throw")
+    ]
+
     return {
         "name": random_name,
         "class": random_class,
@@ -81,14 +102,21 @@ def generate_character(args):
         "background": random_bg["index"],
         "level": level,
         "hp": max_hp,
+        "hit_die": hit_die,
         "proficiency_bonus": proficiency_bonus,
         "stats": ability_scores,
         "saves": {
             st1: save1,
             st2: save2
         },
-        "skills": prof_skills
+        "skills": prof_skills,
+        "speed": race_speed,
+        "initiative": initiative,
+        "ac": ac,
+        "proficiencies": proficiencies,
     }
+
+# OutPut DeBug
 
 def format_skill(skill):
     if skill.startswith("skill-"):
@@ -96,14 +124,23 @@ def format_skill(skill):
     return skill.replace("-", " ").title()
 
 def print_character(char, math):
-    lines_width = 30
+    lines_width = 36
     print("=" * lines_width)
     print(f"{char['name']} | {char['race'].title()} {char['class'].title()}")
     print("=" * lines_width)
 
-    print(f"Level: {char['level']}    HP: {char['hp']}")
+    lvl_txt = f"Level: {char['level']}"
+    hp_txt = f"HP: {char['hp']}"
+    ht_txt = f"Hit Die: {char['level']}d{char['hit_die']}"
+    txt_space = 3 * " "
+
+    print(lvl_txt + txt_space + hp_txt + txt_space + ht_txt)
     print(f"Proficiency Bonus: +{char['proficiency_bonus']}")
     print(f"Background: {char['background'].title()}")
+
+    print(f"\nArmor Class: {char['ac']}")
+    print(f"Initiative: +{char['initiative']}")
+    print(f"Speed: {char['speed']} feet")
 
     print("\nSaving Throws:")
     for k, v in char["saves"].items():
@@ -119,3 +156,6 @@ def print_character(char, math):
         print(f"  - {format_skill(skill)}")
 
     print("=" * lines_width)
+    print("\nProficiencies:")
+    for prof in char["proficiencies"]:
+        print(f"  - {prof}")

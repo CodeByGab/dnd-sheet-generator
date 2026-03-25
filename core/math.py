@@ -48,14 +48,4 @@ def get_level(args):
         return random.choice(range(1, 21))
 
 def get_prof(level):
-    if 1 <= level <= 4:
-        return 2
-    if 5 <= level <= 8:
-        return 3
-    if 9 <= level <= 12:
-        return 4
-    if 13 <= level <= 16:
-        return 5
-    if 17 <= level <= 20:
-        return 6
-
+    return min((level - 1) // 4 + 2, 6)
