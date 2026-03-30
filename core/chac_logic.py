@@ -80,21 +80,72 @@ def generate_character(args):
         prof_skills.append(skill)
         available_class_skills.remove(skill)
 
+    # Geral Prof
+    
+    proficiencies = [
+        prof["name"]
+        for prof in class_data["proficiencies"]
+        if not prof["index"].startswith("saving-throw")
+    ]
+    
+    if random_class == 'bard' or random_class == 'monk':
+
+        proficiency_choices_extra = class_data["proficiency_choices"][1]
+        r_number = proficiency_choices_extra["choose"]
+
+        if random_class == 'bard':
+            for _ in range(r_number):
+                extra_prof = random.choice(proficiency_choices_extra["from"]["options"])["item"]["name"]
+                if extra_prof not in proficiencies:
+                    proficiencies.append(extra_prof)
+
+        if random_class == 'monk':
+            proficiency_choices_extra = class_data["proficiency_choices"][1]
+            r_number = proficiency_choices_extra["choose"]
+            for _ in range(r_number):
+                choice_index = random.choice([0, 1])
+                selected_choice = proficiency_choices_extra["from"]["options"][choice_index]["choice"]
+
+                extra_prof = random.choice(selected_choice["from"]["options"])["item"]["name"]
+
+                if extra_prof not in proficiencies:
+                    proficiencies.append(extra_prof)
+
     # Minus Status
+
     # Speed
     race_speed = race_data["speed"]
     # Initiative
     initiative = math.calc_stt(ability_scores["dex"])
     # AC
     ac = 10 + initiative
-    # Geral Prof
+    # Pass Perception
+    if "skill-perception" in prof_skills:
+        pass_perception = 10 + math.calc_stt(ability_scores["wis"]) + proficiency_bonus
+    else:
+        pass_perception = 10 + math.calc_stt(ability_scores["wis"])
+    
+    # Inventory
+    inventory = [] 
+    for option in class_data["starting_equipment_options"]:
+        option_from = option["from"]
 
-    proficiencies = [
-        prof["name"]
-        for prof in class_data["proficiencies"]
-        if not prof["index"].startswith("saving-throw")
-    ]
+        if option_from["option_set_type"] == "options_array":
+            choice = option_from["options"][0]
 
+            if choice["option_type"] == "counted_reference":
+                inventory.append({
+                    "name": choice["of"]["name"],
+                    "quantity": choice["count"]
+                })
+
+        elif option_from["option_set_type"] == "equipment_category":
+            category = option_from["equipment_category"]["name"]
+
+            inventory.append({
+                "name": f"Any {category}",
+                "quantity": 1
+            })
     return {
         "name": random_name,
         "class": random_class,
@@ -113,7 +164,9 @@ def generate_character(args):
         "speed": race_speed,
         "initiative": initiative,
         "ac": ac,
+        "pass_perception": pass_perception,
         "proficiencies": proficiencies,
+        "inventory": inventory,
     }
 
 # OutPut DeBug
@@ -141,6 +194,7 @@ def print_character(char, math):
     print(f"\nArmor Class: {char['ac']}")
     print(f"Initiative: +{char['initiative']}")
     print(f"Speed: {char['speed']} feet")
+    print(f"Pass Perception: {char['pass_perception']}")
 
     print("\nSaving Throws:")
     for k, v in char["saves"].items():
@@ -159,3 +213,5 @@ def print_character(char, math):
     print("\nProficiencies:")
     for prof in char["proficiencies"]:
         print(f"  - {prof}")
+    for item in char['inventory']:
+        print(f"{item['name']}{f' x{item["quantity"]}' if item['quantity'] > 1 else ''}")
