@@ -30,6 +30,19 @@ def get_class():
     )
     return data["results"] if data else [{"index": "fighter"}]
 
+def get(endpoint):
+    safe_path = endpoint.replace("/", "_")
+
+    if endpoint.startswith("/api"):
+        url = f"https://www.dnd5eapi.co{endpoint}"
+    else:
+        url = f"{BASE_URL}{endpoint}"
+
+    return cached_request(
+        url,
+        f"cache/{safe_path}.json"
+    )
+
 def get_class_data(class_index):
     data = cached_request(
         f"{BASE_URL}/2014/classes/{class_index}",
@@ -86,3 +99,6 @@ def get_backgrounds():
     data = local_request("cache/backgrounds/index.json")
     return data if data else [{"index": "acolyte", "skills": []}]
 
+def get_equipment_category(category_index):
+    data = get(f"/api/2014/equipment-categories/{category_index}")
+    return data or {"equipment": []}
