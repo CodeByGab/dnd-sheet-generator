@@ -354,7 +354,6 @@ def generate_character(args):
                 min(total_prepared, len(available_spells))
             )
 
-        # 📖 Wizard spellbook
             if random_class == "wizard":
                 spellbook_size = 6 + ((level - 1) * 2)
 
@@ -383,6 +382,11 @@ def generate_character(args):
             "spellbook": group_spells_by_level(spellbook, spells_by_level)
         }
 
+    print(max_hp)
+    print(hit_die)
+    print(proficiency_bonus)
+    print(save1)
+    print(save2)
     return {
         "name": random_name,
         "class": random_class,
